@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS tbperson (
+    personid uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    firstname VARCHAR(255) NOT NULL,
+    lastname VARCHAR(255) NOT NULL,
+    isactive BOOLEAN NOT NULL DEFAULT TRUE,
+    dthreg TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    dthalt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT
+);
