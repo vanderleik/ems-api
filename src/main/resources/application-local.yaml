@@ -31,3 +31,6 @@ spring:
     encoding: UTF-8
     locale: pt_BR
     fallback-to-system-locale: false
+
+server:
+  url: http://localhost:8080
