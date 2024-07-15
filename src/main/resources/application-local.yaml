@@ -1,0 +1,27 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/event-management-system
+    username: postgres
+    password: postgres
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+  logging:
+    level:
+      org:
+        springframework:
+          web: DEBUG
+        hibernate:
+          SQL: DEBUG
+
+  server:
+    error:
+      include-stacktrace: never
+    port: 8080
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration

@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: event-management-system
+  profiles:
+    active: local
