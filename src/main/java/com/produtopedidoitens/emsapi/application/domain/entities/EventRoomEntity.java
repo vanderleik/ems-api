@@ -13,6 +13,7 @@ import java.util.UUID;
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Data
+//@DynamicUpdate == usar quanto quando temos bloqueio otimista sem versão
 @Entity
 @Table(name = "tbeventroom")
 public class EventRoomEntity {
