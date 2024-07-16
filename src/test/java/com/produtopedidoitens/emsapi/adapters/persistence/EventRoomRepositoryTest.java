@@ -1,11 +1,13 @@
 package com.produtopedidoitens.emsapi.adapters.persistence;
 
+import com.produtopedidoitens.emsapi.adapters.configuration.QueryDslConfiguration;
 import com.produtopedidoitens.emsapi.application.domain.entities.EventRoomEntity;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -22,12 +24,13 @@ import static org.junit.jupiter.api.Assertions.*;
 @Slf4j
 @DataJpaTest
 @ActiveProfiles("test")
+@Import(QueryDslConfiguration.class)
 class EventRoomRepositoryTest {
 
     @Autowired
     private EventRoomRepository eventRoomRepository;
 
-    // inicia e finaliza transações manualmente, garantindo que cada operação seja executada em uma nova transação.
+    // Inicia e finaliza transações manualmente, garantindo que cada operação seja executada em uma nova transação.
     @Autowired
     private PlatformTransactionManager transactionManager;
 
@@ -37,6 +40,8 @@ class EventRoomRepositoryTest {
 
     @BeforeEach
     void setUp() {
+        eventRoomRepository.deleteAll();
+
         eventRoomEntity = EventRoomEntity.builder().roomName("Room 1").capacity(10).isFull(false).build();
         EventRoomEntity event2 = EventRoomEntity.builder().roomName("Room 2").capacity(20).isFull(false).build();
         EventRoomEntity event3 = EventRoomEntity.builder().roomName("Room 3").capacity(30).isFull(false).build();
@@ -58,7 +63,6 @@ class EventRoomRepositoryTest {
         Optional<EventRoomEntity> eventRetrieved = assertDoesNotThrow(() -> eventRoomRepository
                 .findById(entitySaved.getEventRoomId()));
         assertNotNull(eventRetrieved);
-        log.info("Entity retrieved: {}", eventRetrieved);
 
         assertEquals(entitySaved.getEventRoomId(), eventRetrieved.get().getEventRoomId());
         assertEquals(entitySaved.getRoomName(), eventRetrieved.get().getRoomName());
@@ -83,39 +87,29 @@ class EventRoomRepositoryTest {
 
     @Test
     void testSimultaneousReadAndWriteWithoutConflict() {
-        EventRoomEntity room = EventRoomEntity.builder()
-                .roomName("Room A")
-                .capacity(100)
-                .isFull(false)
-                .build();
+        EventRoomEntity room = EventRoomEntity.builder().roomName("Room A").capacity(100).isFull(false).build();
         eventRoomRepository.save(room);
 
-        //Simulando a leitura da entidade
         EventRoomEntity readRoom1 = eventRoomRepository.findByRoomName("Room A");
-
-        //Atualizando a entidade
         readRoom1.setCapacity(200);
         eventRoomRepository.save(readRoom1);
 
-        //Ler novamente para verificar se a atualização foi bem sucedida
         EventRoomEntity readRoom2 = eventRoomRepository.findByRoomName("Room A");
         assertEquals(200, readRoom2.getCapacity());
     }
 
     @Test
     void testUpdateConflict() {
-        // Iniciar transação principal
         DefaultTransactionDefinition def = new DefaultTransactionDefinition();
         // Garante que cada operação de leitura e escrita seja realizada em uma nova transação separada.
         def.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+
+        // Iniciar transação principal
         TransactionStatus status = transactionManager.getTransaction(def);
 
-        EventRoomEntity room = EventRoomEntity.builder()
-                .roomName("Room B")
-                .capacity(100)
-                .isFull(false)
-                .build();
+        EventRoomEntity room = EventRoomEntity.builder().roomName("Room B").capacity(100).isFull(false).build();
         eventRoomRepository.save(room);
+        log.info("Objeto salvo pela transação principal{}", room);
 
         // Realizamos commit manualmente após cada operação para garantir que as alterações sejam persistidas corretamente
         // e o lock otimista seja aplicado conforme esperado.
@@ -123,27 +117,87 @@ class EventRoomRepositoryTest {
 
         // Simulando duas leituras da mesma entidade em transações separadas
         EventRoomEntity readRoom1 = eventRoomRepository.findByRoomName("Room B");
+        log.info("Objeto lido pela transação secundária: {}", readRoom1);
 
-        status = transactionManager.getTransaction(def);
+        status = transactionManager.getTransaction(def); // Inicia transação
         EventRoomEntity readRoom2 = eventRoomRepository.findByRoomName("Room B");
+        log.info("Objeto lido pela transação secundária: {}", readRoom2);
+
         transactionManager.commit(status);
 
         // Atualizando a entidade na primeira transação
-        status = transactionManager.getTransaction(def);
+        status = transactionManager.getTransaction(def); // Inicia transação
+
         readRoom1.setCapacity(200);
         eventRoomRepository.save(readRoom1);
+        log.info("Objeto atualizado pela transação secundária: {}", readRoom1);
+
         transactionManager.commit(status);
 
         // Tentando atualizar a entidade na segunda transação
         status = transactionManager.getTransaction(def);
         readRoom2.setCapacity(300);
+        log.info("Objeto atualizado pela transação secundária: {}", readRoom2);
 
         TransactionStatus finalStatus = status;
-        Exception exception = assertThrows(ObjectOptimisticLockingFailureException.class, () -> {
+
+        Exception exception = assertThrows(Exception.class, () -> {
             eventRoomRepository.save(readRoom2);
             transactionManager.commit(finalStatus);
         });
-        assertTrue(exception instanceof ObjectOptimisticLockingFailureException, "Esperava uma exceção de bloqueio otimista");
+
+        assertInstanceOf(ObjectOptimisticLockingFailureException.class, exception, "Esperava uma exceção de bloqueio otimista");
+        log.info("Exception capturada: {}", exception.getMessage());
+    }
+
+    @Test
+    void testFindByRoomNameSimultaneousReadAndWriteWithoutConflictQueryDSL() {
+        EventRoomEntity room = EventRoomEntity.builder().roomName("Room A").capacity(100).isFull(false).build();
+        assertDoesNotThrow(() -> eventRoomRepository.save(room));
+
+        EventRoomEntity readRoom1 = eventRoomRepository.findByRoomNameWithOptimistickLock("Room A");
+        readRoom1.setCapacity(200);
+        assertDoesNotThrow(() -> eventRoomRepository.save(readRoom1));
+
+        EventRoomEntity readRoom2 = eventRoomRepository.findByRoomNameWithOptimistickLock("Room A");
+        assertEquals(200, readRoom2.getCapacity());
+    }
+
+    @Test
+    void testUpdateConflictFindByRoomNameSimultaneousReadAndWriteWithoutConflictQueryDSL() {
+        DefaultTransactionDefinition def = new DefaultTransactionDefinition();
+        def.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+
+        TransactionStatus status = transactionManager.getTransaction(def);
+        EventRoomEntity room = EventRoomEntity.builder().roomName("Room C").capacity(100).isFull(false).build();
+        eventRoomRepository.save(room);
+        transactionManager.commit(status);
+
+        EventRoomEntity readRoom1 = eventRoomRepository.findByRoomNameWithOptimistickLock("Room C");
+
+        status = transactionManager.getTransaction(def);
+
+        EventRoomEntity readRoom2 = eventRoomRepository.findByRoomNameWithOptimistickLock("Room C");
+        transactionManager.commit(status);
+
+        status = transactionManager.getTransaction(def);
+
+        readRoom1.setCapacity(200);
+        eventRoomRepository.save(readRoom1);
+        transactionManager.commit(status);
+
+        status = transactionManager.getTransaction(def);
+        readRoom2.setCapacity(300);
+
+        TransactionStatus finalStatus = status;
+
+        Exception exception = assertThrows(Exception.class, () -> {
+            eventRoomRepository.save(readRoom2);
+            transactionManager.commit(finalStatus);
+        });
+
+        assertInstanceOf(ObjectOptimisticLockingFailureException.class, exception, "Esperava uma exceção de bloqueio otimista");
+        log.info("Exception capturada: {}", exception.getMessage());
     }
 
 }
