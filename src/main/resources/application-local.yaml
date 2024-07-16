@@ -3,6 +3,14 @@ spring:
     url: jdbc:postgresql://localhost:5432/event-management-system
     username: postgres
     password: postgres
+    hikari:
+      schema: public #Define o esquema do banco de dados que será utilizado.
+      maximum-pool-size: 8 #Define o tamanho máximo do pool de conexões.
+      minimum-idle: 1 #Define o número mínimo de conexões inativas no pool.
+      connection-timeout: 30000 #Define o tempo máximo de espera para obter uma conexão do pool.
+      idle-timeout: 60000 #Define o tempo máximo que uma conexão pode ficar inativa no pool.
+      data-source-properties: #Define propriedades específicas do driver de conexão.
+        rewriteBatchedStatements: true #Define se as instruções SQL devem ser reescritas como instruções de lote.
 
   jpa:
     hibernate:
@@ -32,5 +40,7 @@ spring:
     locale: pt_BR
     fallback-to-system-locale: false
 
+
 server:
   url: http://localhost:8080
+
