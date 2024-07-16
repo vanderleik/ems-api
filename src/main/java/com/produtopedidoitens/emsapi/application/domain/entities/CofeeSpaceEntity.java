@@ -2,6 +2,7 @@ package com.produtopedidoitens.emsapi.application.domain.entities;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.*;
 
@@ -28,7 +29,7 @@ public class CofeeSpaceEntity {
     @Column(name = "cofeespacename")
     private String cofeeSpaceName;
 
-    @NotBlank(message = "{cofeespace.capacity.notblank}")
+    @NotNull(message = "{cofeespace.capacity.notblank}")
     @Positive(message = "{cofeespace.capacity.positive}")
     @Column(name = "capacity")
     private int capacity;
@@ -37,12 +38,23 @@ public class CofeeSpaceEntity {
     private boolean isFull;
 
     @Column(name = "dthreg")
-    private LocalDateTime dthReg;
+    private LocalDateTime dthreg;
 
     @Column(name = "dthalt")
-    private LocalDateTime dthAlt;
+    private LocalDateTime dthalt;
 
     @Version
-    private long version;
+    private int version;
+
+    @PrePersist
+    protected void onCreate() {
+        dthreg = LocalDateTime.now();
+        dthalt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        dthalt = LocalDateTime.now();
+    }
 
 }

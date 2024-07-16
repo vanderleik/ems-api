@@ -2,6 +2,7 @@ package com.produtopedidoitens.emsapi.application.domain.entities;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.*;
 
@@ -29,7 +30,7 @@ public class EventRoomEntity {
     private String roomName;
 
     @Column(name = "capacity")
-    @NotBlank(message = "{eventroom.capacity.notblank}")
+    @NotNull(message = "{eventroom.capacity.notblank}")
     @Positive(message = "{eventroom.capacity.positive}")
     private int capacity;
 
@@ -37,12 +38,23 @@ public class EventRoomEntity {
     private boolean isFull;
 
     @Column(name = "dthreg")
-    private LocalDateTime dthReg;
+    private LocalDateTime dthreg;
 
     @Column(name = "dthalt")
-    private LocalDateTime dthAlt;
+    private LocalDateTime dthalt;
 
     @Version
-    private long version;
+    private int version;
+
+    @PrePersist
+    protected void onCreate() {
+        dthreg = LocalDateTime.now();
+        dthalt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        dthalt = LocalDateTime.now();
+    }
 
 }

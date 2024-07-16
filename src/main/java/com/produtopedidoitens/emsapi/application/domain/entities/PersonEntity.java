@@ -43,12 +43,23 @@ public class PersonEntity {
     private CofeeSpaceEntity cofeeSpace;
 
     @Column(name = "dthreg")
-    private LocalDateTime dthReg;
+    private LocalDateTime dthreg;
 
     @Column(name = "dthalt")
-    private LocalDateTime dthAlt;
+    private LocalDateTime dthalt;
 
     @Version
-    private long version;
+    private int version;
+
+    @PrePersist
+    protected void onCreate() {
+        dthreg = LocalDateTime.now();
+        dthalt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        dthalt = LocalDateTime.now();
+    }
 
 }
