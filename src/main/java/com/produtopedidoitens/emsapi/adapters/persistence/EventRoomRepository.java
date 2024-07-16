@@ -9,7 +9,7 @@ import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 
 import java.util.UUID;
 
-public interface EventRoomRepository extends JpaRepository<EventRoomEntity, UUID>, QuerydslPredicateExecutor<EventRoomEntity> {
+public interface EventRoomRepository extends JpaRepository<EventRoomEntity, UUID>, QuerydslPredicateExecutor<EventRoomEntity>, EventRoomRepositoryCustom {
 
     @Lock(LockModeType.OPTIMISTIC)
     @Query("SELECT e FROM EventRoomEntity e WHERE e.roomName = :roomName")

@@ -1,11 +1,13 @@
 package com.produtopedidoitens.emsapi.adapters.persistence;
 
+import com.produtopedidoitens.emsapi.adapters.configuration.QueryDslConfiguration;
 import com.produtopedidoitens.emsapi.application.domain.entities.EventRoomEntity;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -22,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @Slf4j
 @DataJpaTest
 @ActiveProfiles("test")
+@Import(QueryDslConfiguration.class)
 class EventRoomRepositoryTest {
 
     @Autowired
@@ -37,6 +40,8 @@ class EventRoomRepositoryTest {
 
     @BeforeEach
     void setUp() {
+        eventRoomRepository.deleteAll();
+
         eventRoomEntity = EventRoomEntity.builder().roomName("Room 1").capacity(10).isFull(false).build();
         EventRoomEntity event2 = EventRoomEntity.builder().roomName("Room 2").capacity(20).isFull(false).build();
         EventRoomEntity event3 = EventRoomEntity.builder().roomName("Room 3").capacity(30).isFull(false).build();
@@ -141,7 +146,57 @@ class EventRoomRepositoryTest {
             transactionManager.commit(finalStatus);
         });
 
-        assertTrue(exception instanceof ObjectOptimisticLockingFailureException, "Esperava uma exceção de bloqueio otimista");
+        assertInstanceOf(ObjectOptimisticLockingFailureException.class, exception, "Esperava uma exceção de bloqueio otimista");
+        log.info("Exception capturada: {}", exception.getMessage());
+    }
+
+    @Test
+    void testFindByRoomNameSimultaneousReadAndWriteWithoutConflictQueryDSL() {
+        EventRoomEntity room = EventRoomEntity.builder().roomName("Room A").capacity(100).isFull(false).build();
+        assertDoesNotThrow(() -> eventRoomRepository.save(room));
+
+        EventRoomEntity readRoom1 = eventRoomRepository.findByRoomNameWithOptimistickLock("Room A");
+        readRoom1.setCapacity(200);
+        assertDoesNotThrow(() -> eventRoomRepository.save(readRoom1));
+
+        EventRoomEntity readRoom2 = eventRoomRepository.findByRoomNameWithOptimistickLock("Room A");
+        assertEquals(200, readRoom2.getCapacity());
+    }
+
+    @Test
+    void testUpdateConflictFindByRoomNameSimultaneousReadAndWriteWithoutConflictQueryDSL() {
+        DefaultTransactionDefinition def = new DefaultTransactionDefinition();
+        def.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+
+        TransactionStatus status = transactionManager.getTransaction(def);
+        EventRoomEntity room = EventRoomEntity.builder().roomName("Room C").capacity(100).isFull(false).build();
+        eventRoomRepository.save(room);
+        transactionManager.commit(status);
+
+        EventRoomEntity readRoom1 = eventRoomRepository.findByRoomNameWithOptimistickLock("Room C");
+
+        status = transactionManager.getTransaction(def);
+
+        EventRoomEntity readRoom2 = eventRoomRepository.findByRoomNameWithOptimistickLock("Room C");
+        transactionManager.commit(status);
+
+        status = transactionManager.getTransaction(def);
+
+        readRoom1.setCapacity(200);
+        eventRoomRepository.save(readRoom1);
+        transactionManager.commit(status);
+
+        status = transactionManager.getTransaction(def);
+        readRoom2.setCapacity(300);
+
+        TransactionStatus finalStatus = status;
+
+        Exception exception = assertThrows(Exception.class, () -> {
+            eventRoomRepository.save(readRoom2);
+            transactionManager.commit(finalStatus);
+        });
+
+        assertInstanceOf(ObjectOptimisticLockingFailureException.class, exception, "Esperava uma exceção de bloqueio otimista");
         log.info("Exception capturada: {}", exception.getMessage());
     }
 
