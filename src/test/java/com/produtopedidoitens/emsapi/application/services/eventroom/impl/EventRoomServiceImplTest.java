@@ -3,6 +3,7 @@ package com.produtopedidoitens.emsapi.application.services.eventroom.impl;
 import com.produtopedidoitens.emsapi.application.validators.eventroom.EventRoomValidator;
 import com.produtopedidoitens.emsapi.domain.entities.EventRoomEntity;
 import com.produtopedidoitens.emsapi.persistence.EventRoomRepository;
+import com.produtopedidoitens.emsapi.utils.MessagesConstants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -68,13 +69,9 @@ class EventRoomServiceImplTest {
                 .dthalt(LocalDateTime.now())
                 .version(0)
                 .build();
-//        when(eventRoomRepository.save(eventRoomEntity)).thenReturn(eventRoomEntity);
-        EventRoomEntity result = assertDoesNotThrow(() -> eventRoomService.saveEventRoom(eventRoomEntity));
 
-        assertNotNull(result);
-        assertEquals(eventRoomEntity.getRoomName(), result.getRoomName());
-        assertEquals(eventRoomEntity.getCapacity(), result.getCapacity());
-        assertEquals(eventRoomEntity.isFull(), result.isFull());
+        Exception exception = assertThrows(Exception.class, () -> eventRoomService.saveEventRoom(eventRoomEntity));
+        assertEquals(MessagesConstants.ROOM_IS_FULL, exception.getMessage());
     }
 
     @Test
