@@ -1,4 +1,4 @@
-package com.produtopedidoitens.emsapi.adapters.configuration;
+package com.produtopedidoitens.emsapi.application.configuration;
 
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;

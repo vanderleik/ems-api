@@ -1,4 +1,4 @@
-package com.produtopedidoitens.emsapi.adapters.configuration;
+package com.produtopedidoitens.emsapi.application.configuration;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;

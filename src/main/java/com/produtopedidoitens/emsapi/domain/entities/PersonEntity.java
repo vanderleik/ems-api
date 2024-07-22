@@ -1,4 +1,4 @@
-package com.produtopedidoitens.emsapi.application.domain.entities;
+package com.produtopedidoitens.emsapi.domain.entities;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;

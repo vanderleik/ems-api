@@ -1,8 +1,8 @@
-package com.produtopedidoitens.emsapi.adapters.persistence.impl;
+package com.produtopedidoitens.emsapi.persistence.impl;
 
-import com.produtopedidoitens.emsapi.adapters.persistence.EventRoomRepositoryCustom;
-import com.produtopedidoitens.emsapi.application.domain.entities.EventRoomEntity;
-import com.produtopedidoitens.emsapi.application.domain.entities.QEventRoomEntity;
+import com.produtopedidoitens.emsapi.domain.entities.EventRoomEntity;
+import com.produtopedidoitens.emsapi.domain.entities.QEventRoomEntity;
+import com.produtopedidoitens.emsapi.persistence.EventRoomRepositoryCustom;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
