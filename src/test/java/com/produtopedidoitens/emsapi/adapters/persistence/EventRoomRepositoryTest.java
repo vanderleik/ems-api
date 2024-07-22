@@ -1,7 +1,8 @@
 package com.produtopedidoitens.emsapi.adapters.persistence;
 
-import com.produtopedidoitens.emsapi.adapters.configuration.QueryDslConfiguration;
-import com.produtopedidoitens.emsapi.application.domain.entities.EventRoomEntity;
+import com.produtopedidoitens.emsapi.application.configuration.QueryDslConfiguration;
+import com.produtopedidoitens.emsapi.domain.entities.EventRoomEntity;
+import com.produtopedidoitens.emsapi.persistence.EventRoomRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

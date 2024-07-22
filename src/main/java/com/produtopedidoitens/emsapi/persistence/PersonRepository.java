@@ -1,6 +1,6 @@
-package com.produtopedidoitens.emsapi.adapters.persistence;
+package com.produtopedidoitens.emsapi.persistence;
 
-import com.produtopedidoitens.emsapi.application.domain.entities.PersonEntity;
+import com.produtopedidoitens.emsapi.domain.entities.PersonEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 
