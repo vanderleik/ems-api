@@ -29,8 +29,9 @@ public class EventRoomServiceImpl implements EventRoomService {
     public EventRoomEntity saveEventRoom(EventRoomEntity eventRoomEntity) {
         log.info("saveEventRoom:: Recebendo requisição para salvar sala de eventos");
         eventRoomValidator.validate(eventRoomEntity);
+        eventRoomExistsByEventRoomName(eventRoomEntity.getRoomName());
 
-        eventRoomIsFull(eventRoomEntity.isFull(), eventRoomEntity.getRoomName());
+        eventRoomIsFull(eventRoomEntity.isFull());
         EventRoomEntity eventRoom = eventRoomRepository.save(eventRoomEntity);
         log.info("saveEventRoom:: Salvando sala de eventos: {}", eventRoom);
         return eventRoom;
@@ -97,6 +98,7 @@ public class EventRoomServiceImpl implements EventRoomService {
 
     private EventRoomEntity updateEventRoomWithData(EventRoomEntity eventRoomEntity, String eventRoomId) {
         EventRoomEntity eventRoom = getEventRoomById(eventRoomId);
+
         eventRoom.setRoomName(eventRoomEntity.getRoomName() == null ? eventRoom.getRoomName() : eventRoomEntity.getRoomName());
         eventRoom.setCapacity(eventRoomEntity.getCapacity() == 0  ? eventRoom.getCapacity() : eventRoomEntity.getCapacity());
 
@@ -141,18 +143,20 @@ public class EventRoomServiceImpl implements EventRoomService {
                 });
     }
 
-    private void eventRoomIsFull(boolean isFull, String roomName) {
+    private void eventRoomIsFull(boolean isFull) {
         log.info("eventRoomIsFull:: Verificando se a sala de eventos está cheia");
-
-        EventRoomEntity eventRoom = eventRoomRepository.findByRoomName(roomName);
-        if (Objects.nonNull(eventRoom)) {
-            log.error("saveEventRoom:: {} {}", MessagesConstants.ROOM_ALREADY_EXISTS, roomName);
-            throw new EventRoomIllegalArgumentException(MessagesConstants.ROOM_ALREADY_EXISTS, roomName);
-        }
 
         if(Boolean.TRUE.equals(isFull)) {
             log.error("saveEventRoom:: {}", MessagesConstants.ROOM_IS_FULL);
             throw new EventRoomIllegalArgumentException(MessagesConstants.ROOM_IS_FULL);
+        }
+    }
+
+    private void eventRoomExistsByEventRoomName(String roomName) {
+        EventRoomEntity eventRoom = eventRoomRepository.findByRoomName(roomName);
+        if (Objects.nonNull(eventRoom)) {
+            log.error("saveEventRoom:: {} {}", MessagesConstants.ROOM_ALREADY_EXISTS, roomName);
+            throw new EventRoomIllegalArgumentException(MessagesConstants.ROOM_ALREADY_EXISTS, roomName);
         }
     }
 
