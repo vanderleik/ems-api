@@ -11,8 +11,4 @@ public class MessagesConstants {
     private MessagesConstants() {
     }
 
-    public static MessagesConstants createMessagesConstants() {
-        return new MessagesConstants();
-    }
-
 }
