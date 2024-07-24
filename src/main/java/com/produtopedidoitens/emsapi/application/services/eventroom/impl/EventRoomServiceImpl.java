@@ -11,9 +11,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.ObjectUtils;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Slf4j
@@ -29,6 +29,7 @@ public class EventRoomServiceImpl implements EventRoomService {
     public EventRoomEntity saveEventRoom(EventRoomEntity eventRoomEntity) {
         log.info("saveEventRoom:: Recebendo requisição para salvar sala de eventos");
         eventRoomValidator.validate(eventRoomEntity);
+        eventRoomExistsByEventRoomName(eventRoomEntity.getRoomName());
 
         eventRoomIsFull(eventRoomEntity.isFull());
         EventRoomEntity eventRoom = eventRoomRepository.save(eventRoomEntity);
@@ -97,12 +98,9 @@ public class EventRoomServiceImpl implements EventRoomService {
 
     private EventRoomEntity updateEventRoomWithData(EventRoomEntity eventRoomEntity, String eventRoomId) {
         EventRoomEntity eventRoom = getEventRoomById(eventRoomId);
-        eventRoom.setRoomName(eventRoomEntity.getRoomName() == null ? eventRoom.getRoomName() : eventRoomEntity.getRoomName());
-        eventRoom.setCapacity(ObjectUtils.isEmpty(eventRoomEntity.getCapacity()) ? eventRoom.getCapacity() : eventRoomEntity.getCapacity());
-        eventRoom.setFull(ObjectUtils.isEmpty(eventRoomEntity.isFull()) ? eventRoom.isFull() : eventRoomEntity.isFull());
 
-        eventRoomValidator.validate(eventRoom);
-        eventRoomIsFull(eventRoom.isFull());
+        eventRoom.setRoomName(eventRoomEntity.getRoomName() == null ? eventRoom.getRoomName() : eventRoomEntity.getRoomName());
+        eventRoom.setCapacity(eventRoomEntity.getCapacity() == 0  ? eventRoom.getCapacity() : eventRoomEntity.getCapacity());
 
         return eventRoomRepository.save(eventRoom);
     }
@@ -145,12 +143,20 @@ public class EventRoomServiceImpl implements EventRoomService {
                 });
     }
 
-    private static void eventRoomIsFull(boolean isFull) {
+    private void eventRoomIsFull(boolean isFull) {
         log.info("eventRoomIsFull:: Verificando se a sala de eventos está cheia");
 
         if(Boolean.TRUE.equals(isFull)) {
             log.error("saveEventRoom:: {}", MessagesConstants.ROOM_IS_FULL);
             throw new EventRoomIllegalArgumentException(MessagesConstants.ROOM_IS_FULL);
+        }
+    }
+
+    private void eventRoomExistsByEventRoomName(String roomName) {
+        EventRoomEntity eventRoom = eventRoomRepository.findByRoomName(roomName);
+        if (Objects.nonNull(eventRoom)) {
+            log.error("saveEventRoom:: {} {}", MessagesConstants.ROOM_ALREADY_EXISTS, roomName);
+            throw new EventRoomIllegalArgumentException(MessagesConstants.ROOM_ALREADY_EXISTS, roomName);
         }
     }
 
