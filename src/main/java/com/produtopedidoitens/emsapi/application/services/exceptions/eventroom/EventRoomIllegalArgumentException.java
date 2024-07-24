@@ -6,4 +6,7 @@ public class EventRoomIllegalArgumentException extends RuntimeException {
         super(message);
     }
 
+    public EventRoomIllegalArgumentException(String message, String roomName) {
+        super(String.format(message, roomName));
+    }
 }
